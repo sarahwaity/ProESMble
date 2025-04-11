@@ -1,4 +1,6 @@
 # ProESMble
+![coverage](https://img.shields.io/badge/coverage-100%25-green)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 **ProESMble** is a Python pipeline for predicting the functional effects of protein mutations using state-of-the-art transformer-based protein embeddings (ESM2) and an ensemble of machine learning models. It is designed for researchers in computational biology and protein engineering who want to integrate deep sequence representations with interpretable, high-performance predictive models.
 
