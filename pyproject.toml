@@ -1,0 +1,23 @@
+[project]
+name = "proesm"
+version = "0.1.0"
+description = "Predict mutation effects with ESM embeddings and ensemble models"
+authors = [{name="Your Name", email="you@example.com"}]
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.8"
+
+dependencies = [
+    "numpy",
+    "pandas",
+    "torch",
+    "biopython",
+    "tqdm",
+    "scikit-learn",
+    "xgboost",
+    "esm==1.0.3"  # or whatever version you use
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
