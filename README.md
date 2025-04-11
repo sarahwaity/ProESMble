@@ -6,6 +6,8 @@
 
 ---
 
+<img src=Images/ProESMble.png width=750 align="center" vspace = "20">
+
 ## Features
 
 - **Protein Embedding**: Leverages ESM2 models to extract per-sequence embeddings from protein FASTA files.
