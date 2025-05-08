@@ -224,7 +224,7 @@ def model_training_and_predictions(merged_df,novel_embedding_df):
     X = merged_df.drop(columns=["ID", "Effect"])
     y = merged_df["Effect"]
 
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify= y)
 
     #Data_Preprocessing#################################################################################
     std_scale = StandardScaler(with_mean=True, with_std=True).fit(X_train)
@@ -243,32 +243,32 @@ def model_training_and_predictions(merged_df,novel_embedding_df):
     print('Training RFR...')
 
     pipeline = Pipeline([
-        ('RFR', RandomForestRegressor(random_state = 42))
+        ('model', RandomForestRegressor(random_state = 42))
     ])
 
-    RFR_param_grid = {
-        'RFR__n_estimators': [100, 300, 500],            # More trees = better learning
-        'RFR__max_depth': [10, 30, 50, None],            # None = full depth, try deeper
-        'RFR__min_samples_split': [2, 5, 10],            # Lower = more splits = higher complexity
-        'RFR__min_samples_leaf': [1, 2, 4],              # Smaller = more complexity
-        'RFR__max_features': ['sqrt', 0.5, 1.0]          # Controls randomness, try more options
+    param_grid = {
+        'model__n_estimators': [100, 300, 500],            # More trees = better learning
+        'model__max_depth': [10, 30, 50, None],            # None = full depth, try deeper
+        'model__min_samples_split': [2, 5, 10],            # Lower = more splits = higher complexity
+        'model__min_samples_leaf': [1, 2, 4],              # Smaller = more complexity
+        'model__max_features': ['sqrt', 0.5, 1.0]          # Controls randomness, try more options
     }
 
-    RFR_grid = GridSearchCV(
+    hyperparameter_grid = GridSearchCV(
         pipeline,
-        RFR_param_grid,
+        param_grid,
         scoring=scoring,
         cv=cv_method,
         n_jobs=-1,
         verbose=1
     )
 
-    RFR_grid.fit(X_train_pca, y_train)
+    hyperparameter_grid.fit(X_train_pca, y_train)
 
     best_params = {
-        key.replace('RFR__', ''): val
-        for key, val in RFR_grid.best_params_.items()
-        if key.startswith('RFR__')
+        key.replace('model__', ''): val
+        for key, val in hyperparameter_grid.best_params_.items()
+        if key.startswith('model_')
     }
 
     model1 = RandomForestRegressor(**best_params,random_state = 42).fit(X_train_pca,y_train)
@@ -283,26 +283,29 @@ def model_training_and_predictions(merged_df,novel_embedding_df):
         ('KNR', KNeighborsRegressor())
     ])
 
-    KNR_param_grid =  {'KNR__weights': ['uniform', 'distance'],
-                    'KNR__algorithm': ['auto', 'ball_tree',],
-                    'KNR__p': [1,2]}
 
-    KNR_grid = GridSearchCV(
+    param_grid = {
+        'model__weights': ['uniform', 'distance'],
+        'model__algorithm': ['auto', 'ball_tree',],
+        'model__p': [1,2],
+        'model__n_neighbors': [3, 5, 10, 20],
+    }
+
+    hyperparameter_grid = GridSearchCV(
         pipeline,
-        KNR_param_grid,
+        param_grid,
         scoring=scoring,
         cv=cv_method,
         n_jobs=-1,
         verbose=1
     )
 
-
-    KNR_grid.fit(X_train_pca, y_train)
+    hyperparameter_grid.fit(X_train_pca, y_train)
 
     best_params = {
-        key.replace('KNR__', ''): val
-        for key, val in KNR_grid.best_params_.items()
-        if key.startswith('KNR__')
+        key.replace('model__', ''): val
+        for key, val in hyperparameter_grid.best_params_.items()
+        if key.startswith('model_')
     }
 
     model2 = KNeighborsRegressor(**best_params).fit(X_train_pca,y_train)
@@ -310,35 +313,38 @@ def model_training_and_predictions(merged_df,novel_embedding_df):
     print('KNR Tuned.')
 
 
-
-
     #########Gaussian Process Regressor########
     print('Training GPR...')
 
     pipeline = Pipeline([
-        ('GPR', GaussianProcessRegressor(random_state = 42))
+        ('model', GaussianProcessRegressor(random_state = 42))
     ])
 
-    GPR_param_grid = {'GPR__kernel': [1.0 * RBF(length_scale=l) for l in [0.1, 1.0, 10.0]] + [1.0 * Matern(length_scale=l, nu=nu) for l in [0.1, 1.0, 10.0] for nu in [0.5, 1.5, 2.5]] + [RationalQuadratic(length_scale=l, alpha=a) for l in [0.1, 1.0] for a in [0.1, 1.0]] + [DotProduct(sigma_0=s) + WhiteKernel(noise_level=n) for s in [0.1, 1.0] for n in [1e-5, 1e-2]],
-                    'GPR__alpha': [1e-10, 1e-5, 1e-3],
-                    'GPR__normalize_y': [True]}
+    param_grid = {
+        'model__kernel': [
+            1.0 * RBF(length_scale=1.0),
+            1.0 * Matern(length_scale=1.0, nu=1.5),
+            RationalQuadratic(length_scale=1.0, alpha=1.0),
+        ],
+        'model__alpha': [1e-5, 1e-3],
+        'model__normalize_y': [True]
+    }
 
-
-    GPR_grid = GridSearchCV(
+    hyperparameter_grid = GridSearchCV(
         pipeline,
-        GPR_param_grid,
+        param_grid,
         scoring=scoring,
         cv=cv_method,
         n_jobs=-1,
         verbose=1
     )
 
-    GPR_grid.fit(X_train_pca, y_train)
+    hyperparameter_grid.fit(X_train_pca, y_train)
 
     best_params = {
-        key.replace('GPR__', ''): val
-        for key, val in GPR_grid.best_params_.items()
-        if key.startswith('GPR__')
+        key.replace('model__', ''): val
+        for key, val in hyperparameter_grid.best_params_.items()
+        if key.startswith('model_')
     }
 
     model3 = GaussianProcessRegressor(**best_params,random_state = 42).fit(X_train_pca,y_train)
